@@ -180,6 +180,15 @@ app.delete('/api/contact/:id', async (req, res) => {
   }
 });
 
+// Error handler para Multer / Cloudinary y otros
+app.use((err, req, res, next) => {
+  console.error('Error Global (Multer/Cloudinary o similar):', err);
+  if (err instanceof multer.MulterError) {
+    return res.status(400).json({ error: `Error de carga de archivo: ${err.message}` });
+  }
+  res.status(500).json({ error: err.message || 'Error interno del servidor', details: err });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server is running on port ${PORT}`);
