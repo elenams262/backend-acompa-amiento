@@ -3,6 +3,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 require('dotenv').config();
 
+const axios = require('axios');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('cloudinary').v2;
@@ -155,22 +156,24 @@ app.post('/api/contact', async (req, res) => {
 
     if (accessKey) {
       try {
-        const response = await fetch('https://api.web3forms.com/submit', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify({
+        const response = await axios.post(
+          'https://api.web3forms.com/submit',
+          {
             access_key: accessKey,
             subject: `Nuevo mensaje de contacto: ${subject}`,
             from_name: name,
             email: email, // This is the user's email, Web3forms supports it for "Reply To"
             message: `Has recibido un nuevo mensaje de contacto.\n\nNombre: ${name}\nTeléfono: ${phone}\nEmail: ${email}\nAsunto: ${subject}\n\nMensaje:\n${message}`,
-          }),
-        });
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json',
+            },
+          },
+        );
 
-        const data = await response.json();
+        const data = response.data;
         if (data.success) {
           console.log('Correo enviado con éxito mediante Web3Forms');
         } else {
@@ -180,7 +183,7 @@ app.post('/api/contact', async (req, res) => {
             .json({ error: 'Error al procesar el envío del correo en la plataforma externa.' });
         }
       } catch (emailError) {
-        console.error('Error enviando correo con Web3Forms:', emailError);
+        console.error('Error enviando correo con Web3Forms:', emailError.message);
         return res.status(500).json({ error: 'Error de red al intentar enviar el correo.' });
       }
     } else {
