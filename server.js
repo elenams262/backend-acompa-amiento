@@ -40,15 +40,6 @@ const contactSchema = new mongoose.Schema({
 
 const Contact = mongoose.model('Contact', contactSchema);
 
-// Email transporter
-const transporter = require('nodemailer').createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER || 'acompanamiento.sanitario@gmail.com',
-    pass: process.env.EMAIL_PASS || 'tu-contrasena-de-aplicacion', // User should configure this App Password
-  },
-});
-
 // Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -159,23 +150,43 @@ app.post('/api/contact', async (req, res) => {
     const newContact = new Contact({ name, phone, email, subject, message });
     await newContact.save();
 
-    // Send email notification
-    const mailOptions = {
-      from: process.env.EMAIL_USER || 'acompanamiento.sanitario@gmail.com',
-      to: 'acompanamiento.sanitario@gmail.com',
-      replyTo: email,
-      subject: `Nuevo mensaje de contacto: ${subject}`,
-      text: `Has recibido un nuevo mensaje de contacto.\n\nNombre: ${name}\nTeléfono: ${phone}\nEmail: ${email}\nAsunto: ${subject}\n\nMensaje:\n${message}`,
-    };
+    // Send email notification using Web3Forms HTTP API
+    const accessKey = process.env.WEB3FORMS_ACCESS_KEY;
 
-    try {
-      await transporter.sendMail(mailOptions);
-      console.log('Correo enviado con éxito');
-    } catch (emailError) {
-      console.error('Error enviando correo:', emailError);
-      return res
-        .status(500)
-        .json({ error: 'Error al enviar el correo. Revisa las credenciales de Gmail.' });
+    if (accessKey) {
+      try {
+        const response = await fetch('https://api.web3forms.com/submit', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({
+            access_key: accessKey,
+            subject: `Nuevo mensaje de contacto: ${subject}`,
+            from_name: name,
+            email: email, // This is the user's email, Web3forms supports it for "Reply To"
+            message: `Has recibido un nuevo mensaje de contacto.\n\nNombre: ${name}\nTeléfono: ${phone}\nEmail: ${email}\nAsunto: ${subject}\n\nMensaje:\n${message}`,
+          }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          console.log('Correo enviado con éxito mediante Web3Forms');
+        } else {
+          console.error('Error de Web3Forms:', data);
+          return res
+            .status(500)
+            .json({ error: 'Error al procesar el envío del correo en la plataforma externa.' });
+        }
+      } catch (emailError) {
+        console.error('Error enviando correo con Web3Forms:', emailError);
+        return res.status(500).json({ error: 'Error de red al intentar enviar el correo.' });
+      }
+    } else {
+      console.warn(
+        'WEB3FORMS_ACCESS_KEY no está configurado. El correo no se enviará, pero el mensaje se guardará.',
+      );
     }
 
     res.status(201).json({ ...newContact.toObject(), id: newContact._id.toString() });
