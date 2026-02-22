@@ -168,13 +168,15 @@ app.post('/api/contact', async (req, res) => {
       text: `Has recibido un nuevo mensaje de contacto.\n\nNombre: ${name}\nTeléfono: ${phone}\nEmail: ${email}\nAsunto: ${subject}\n\nMensaje:\n${message}`,
     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error('Error enviando correo:', error);
-      } else {
-        console.log('Correo enviado:', info.response);
-      }
-    });
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log('Correo enviado con éxito');
+    } catch (emailError) {
+      console.error('Error enviando correo:', emailError);
+      return res
+        .status(500)
+        .json({ error: 'Error al enviar el correo. Revisa las credenciales de Gmail.' });
+    }
 
     res.status(201).json({ ...newContact.toObject(), id: newContact._id.toString() });
   } catch (error) {
