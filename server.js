@@ -76,8 +76,8 @@ app.get('/api/posts', async (req, res) => {
 function handleUpload(req, res, next) {
   upload.single('image')(req, res, function (err) {
     if (err) {
-      console.log('UPLOAD ERROR:', err);
-      return res.status(400).json({ error: err.message || JSON.stringify(err) });
+      console.error('UPLOAD ERROR CAUGHT:', err.message ? err.message : err);
+      return res.status(400).json({ error: err.message || 'Error occurred during image upload' });
     }
     next();
   });
