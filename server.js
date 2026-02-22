@@ -28,6 +28,27 @@ const postSchema = new mongoose.Schema({
 
 const Post = mongoose.model('Post', postSchema);
 
+// Contact model
+const contactSchema = new mongoose.Schema({
+  name: String,
+  phone: String,
+  email: String,
+  subject: String,
+  message: String,
+  date: { type: Date, default: Date.now },
+});
+
+const Contact = mongoose.model('Contact', contactSchema);
+
+// Email transporter
+const transporter = require('nodemailer').createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER || 'acompanamiento.sanitario@gmail.com',
+    pass: process.env.EMAIL_PASS || 'tu-contrasena-de-aplicacion', // User should configure this App Password
+  },
+});
+
 // Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -112,6 +133,67 @@ app.delete('/api/posts/:id', async (req, res) => {
     // Optionally delete image from Cloudinary here by plucking the public_id from imageUrl
 
     res.json({ message: 'Post deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Contact Routes
+app.get('/api/contact', async (req, res) => {
+  try {
+    const contacts = await Contact.find().sort({ date: -1 });
+    const formattedContacts = contacts.map((contact) => ({
+      ...contact.toObject(),
+      id: contact._id.toString(),
+    }));
+    res.json(formattedContacts);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, phone, email, subject, message } = req.body;
+
+    const newContact = new Contact({ name, phone, email, subject, message });
+    await newContact.save();
+
+    // Send email notification
+    const mailOptions = {
+      from: process.env.EMAIL_USER || 'acompanamiento.sanitario@gmail.com',
+      to: 'acompanamiento.sanitario@gmail.com',
+      replyTo: email,
+      subject: `Nuevo mensaje de contacto: ${subject}`,
+      text: `Has recibido un nuevo mensaje de contacto.\n\nNombre: ${name}\nTeléfono: ${phone}\nEmail: ${email}\nAsunto: ${subject}\n\nMensaje:\n${message}`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error('Error enviando correo:', error);
+      } else {
+        console.log('Correo enviado:', info.response);
+      }
+    });
+
+    res.status(201).json({ ...newContact.toObject(), id: newContact._id.toString() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/contact/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+
+    const deletedContact = await Contact.findByIdAndDelete(id);
+    if (!deletedContact) return res.status(404).json({ error: 'Contact not found' });
+
+    res.json({ message: 'Contact deleted' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
