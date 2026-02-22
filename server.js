@@ -144,6 +144,10 @@ app.get('/api/contact', async (req, res) => {
   }
 });
 
+app.get('/api/config/web3forms', (req, res) => {
+  res.json({ accessKey: process.env.WEB3FORMS_ACCESS_KEY || '' });
+});
+
 app.post('/api/contact', async (req, res) => {
   try {
     const { name, phone, email, subject, message } = req.body;
@@ -151,46 +155,7 @@ app.post('/api/contact', async (req, res) => {
     const newContact = new Contact({ name, phone, email, subject, message });
     await newContact.save();
 
-    // Send email notification using Web3Forms HTTP API
-    const accessKey = process.env.WEB3FORMS_ACCESS_KEY;
-
-    if (accessKey) {
-      try {
-        const response = await axios.post(
-          'https://api.web3forms.com/submit',
-          {
-            access_key: accessKey,
-            subject: `Nuevo mensaje de contacto: ${subject}`,
-            from_name: name,
-            email: email, // This is the user's email, Web3forms supports it for "Reply To"
-            message: `Has recibido un nuevo mensaje de contacto.\n\nNombre: ${name}\nTeléfono: ${phone}\nEmail: ${email}\nAsunto: ${subject}\n\nMensaje:\n${message}`,
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Accept: 'application/json',
-            },
-          },
-        );
-
-        const data = response.data;
-        if (data.success) {
-          console.log('Correo enviado con éxito mediante Web3Forms');
-        } else {
-          console.error('Error de Web3Forms:', data);
-          return res
-            .status(500)
-            .json({ error: 'Error al procesar el envío del correo en la plataforma externa.' });
-        }
-      } catch (emailError) {
-        console.error('Error enviando correo con Web3Forms:', emailError.message);
-        return res.status(500).json({ error: 'Error de red al intentar enviar el correo.' });
-      }
-    } else {
-      console.warn(
-        'WEB3FORMS_ACCESS_KEY no está configurado. El correo no se enviará, pero el mensaje se guardará.',
-      );
-    }
+    // (Email is now handled directly by the frontend to bypass Render proxy blocks)
 
     res.status(201).json({ ...newContact.toObject(), id: newContact._id.toString() });
   } catch (error) {
