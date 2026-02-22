@@ -73,7 +73,17 @@ app.get('/api/posts', async (req, res) => {
   }
 });
 
-app.post('/api/posts', upload.single('image'), async (req, res) => {
+function handleUpload(req, res, next) {
+  upload.single('image')(req, res, function (err) {
+    if (err) {
+      console.log('UPLOAD ERROR:', err);
+      return res.status(400).json({ error: err.message || JSON.stringify(err) });
+    }
+    next();
+  });
+}
+
+app.post('/api/posts', handleUpload, async (req, res) => {
   try {
     const { title, content } = req.body;
     const excerpt = content ? content.substring(0, 100) + '...' : '';
@@ -88,7 +98,7 @@ app.post('/api/posts', upload.single('image'), async (req, res) => {
   }
 });
 
-app.put('/api/posts/:id', upload.single('image'), async (req, res) => {
+app.put('/api/posts/:id', handleUpload, async (req, res) => {
   try {
     const { id } = req.params;
     const { title, content } = req.body;
