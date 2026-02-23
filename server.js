@@ -41,6 +41,16 @@ const contactSchema = new mongoose.Schema({
 
 const Contact = mongoose.model('Contact', contactSchema);
 
+// Testimonial model
+const testimonialSchema = new mongoose.Schema({
+  name: String,
+  text: String,
+  approved: { type: Boolean, default: false },
+  date: { type: Date, default: Date.now },
+});
+
+const Testimonial = mongoose.model('Testimonial', testimonialSchema);
+
 // Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -185,6 +195,65 @@ app.delete('/api/contact/:id', async (req, res) => {
     if (!deletedContact) return res.status(404).json({ error: 'Contact not found' });
 
     res.json({ message: 'Contact deleted' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Testimonial Routes
+app.get('/api/testimonials/approved', async (req, res) => {
+  try {
+    const testimonials = await Testimonial.find({ approved: true }).sort({ date: -1 });
+    const formatted = testimonials.map((t) => ({ ...t.toObject(), id: t._id.toString() }));
+    res.json(formatted);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/testimonials/all', async (req, res) => {
+  try {
+    const testimonials = await Testimonial.find().sort({ date: -1 });
+    const formatted = testimonials.map((t) => ({ ...t.toObject(), id: t._id.toString() }));
+    res.json(formatted);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/testimonials', async (req, res) => {
+  try {
+    const { name, text } = req.body;
+    const newTestimonial = new Testimonial({ name, text });
+    await newTestimonial.save();
+    res.status(201).json({ ...newTestimonial.toObject(), id: newTestimonial._id.toString() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/testimonials/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id))
+      return res.status(404).json({ error: 'Testimonial not found' });
+    const test = await Testimonial.findById(id);
+    if (!test) return res.status(404).json({ error: 'Testimonial not found' });
+    test.approved = !test.approved; // Toggle boolean
+    await test.save();
+    res.json({ ...test.toObject(), id: test._id.toString() });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/testimonials/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id))
+      return res.status(404).json({ error: 'Testimonial not found' });
+    await Testimonial.findByIdAndDelete(id);
+    res.json({ message: 'Deleted' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
