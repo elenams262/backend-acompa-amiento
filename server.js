@@ -53,7 +53,7 @@ const Contact = mongoose.model('Contact', contactSchema);
 const testimonialSchema = new mongoose.Schema({
   name: String,
   text: String,
-  approved: { type: Boolean, default: false },
+  approved: { type: Boolean, default: true },
   date: { type: Date, default: Date.now },
 });
 

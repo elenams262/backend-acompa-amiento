@@ -1,0 +1,50 @@
+[
+  {
+    "_id": "699c4eebac7f06f853b9dae8",
+    "name": "prueba",
+    "text": "dfgfzr",
+    "approved": true,
+    "date": "2026-02-23T12:58:19.868Z",
+    "__v": 0
+  },
+  {
+    "_id": "699c5311aa2ff28da8672cdd",
+    "name": "hola",
+    "text": "sdfkjawrfh",
+    "approved": true,
+    "date": "2026-02-23T13:16:01.103Z",
+    "__v": 0
+  },
+  {
+    "_id": "699c56431806143d2c14b055",
+    "name": "prueba 2",
+    "text": "dlfjvhfodivuñoij",
+    "approved": true,
+    "date": "2026-02-23T13:29:39.627Z",
+    "__v": 0
+  },
+  {
+    "_id": "699c76a100609d1adcc348b9",
+    "name": "prueba 3",
+    "text": "ssdgaer",
+    "approved": true,
+    "date": "2026-02-23T15:47:45.502Z",
+    "__v": 0
+  },
+  {
+    "_id": "699c788961035cb1c0b9a331",
+    "name": "TEST",
+    "text": "TEXT",
+    "approved": false,
+    "date": "2026-02-23T15:55:53.795Z",
+    "__v": 0
+  },
+  {
+    "_id": "699c78c000609d1adcc348d5",
+    "name": "test id gen",
+    "text": "test",
+    "approved": false,
+    "date": "2026-02-23T15:56:48.277Z",
+    "__v": 0
+  }
+]
